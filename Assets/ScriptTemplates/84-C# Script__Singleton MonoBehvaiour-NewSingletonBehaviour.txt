@@ -1,0 +1,75 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+/// A Singleton Monobehaviour
+public class #SCRIPTNAME# : Monobehaviour
+{
+
+    #region --------------------    Public Enumerations
+
+
+
+    #endregion
+
+    #region --------------------    Public Events
+
+
+
+    #endregion
+
+    #region --------------------    Public Properties
+
+    /// Stores the singleton instance for the class
+    public static #SCRIPTNAME# instance { get; private set; } = null;
+
+    #endregion
+
+    #region --------------------    Public Methods
+
+
+
+    #endregion
+
+	#region --------------------	Protected Fields
+
+
+
+	#endregion
+
+	#region --------------------	Protected Methods
+
+
+
+	#endregion
+
+    #region --------------------    Private Fields
+
+    [Header ("Singleton Configurations")]
+    [SerializeField] private bool _isPersistent = false;
+
+    #endregion
+
+    #region --------------------    Private Methods
+
+    /// Used to perform configuration for the class
+    private void Awake() => _SetSingleton();
+
+    /// Sets the singleton for the class
+    private void _SetSingleton()
+    {
+        instance = instance ?? this;
+        if (instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        if (_isPersistent)
+        {
+            DontDestroyOnLoad(gameObject);
+        }
+    }
+
+    #endregion
+
+}

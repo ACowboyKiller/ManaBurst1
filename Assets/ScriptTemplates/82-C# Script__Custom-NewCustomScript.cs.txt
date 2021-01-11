@@ -1,0 +1,52 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class #SCRIPTNAME#
+{
+
+    #region --------------------    Public Enumerations
+
+
+
+    #endregion
+
+    #region --------------------    Public Events
+
+
+
+    #endregion
+
+    #region --------------------    Public Properties
+
+
+
+    #endregion
+
+    #region --------------------    Public Methods
+
+	public #SCRIPTNAME# ()
+	{
+	
+	}
+
+	~#SCRIPTNAME# ()
+	{
+	
+	}
+
+    #endregion
+
+    #region --------------------    Private Fields
+
+
+
+    #endregion
+
+    #region --------------------    Private Methods
+
+
+
+    #endregion
+
+}
