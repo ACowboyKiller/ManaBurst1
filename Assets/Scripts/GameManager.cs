@@ -97,7 +97,7 @@ public class GameManager : MonoBehaviour
     /// <summary>
     /// Sets the state to gameplay after closing the current canvas and opening the gameplay canvas
     /// </summary>
-    public void GoToGameplay() => HideCanvas(stateCanvas[state], () => ShowCanvas(stateCanvas[GameState.Gameplay], () => state = GameState.Gameplay));
+    public void GoToGameplay() => HideCanvas(stateCanvas[state], () => ShowCanvas(stateCanvas[GameState.Gameplay], _RestartGame));
 
     /// <summary>
     /// Sets the state to results after closing the current canvas and opening the results canvas
@@ -109,29 +109,34 @@ public class GameManager : MonoBehaviour
     /// </summary>
     /// <param name="_pLane"></param>
     /// <returns></returns>
-    public Tower NextTower(string _pTag, Lane _pLane)
+    public iCombatable NextTower(string _pTag, Lane _pLane)
     {
         switch (_pTag)
         {
             case "EnemyTeam":
                 switch (_pLane)
                 {
-                    case Lane.Top: return ((_topPlayerTowers.Count > 0) ? _topPlayerTowers[0] : _playerBase);
-                    case Lane.Mid: return ((_midPlayerTowers.Count > 0) ? _midPlayerTowers[0] : _playerBase);
-                    case Lane.Bot: return ((_botPlayerTowers.Count > 0) ? _botPlayerTowers[0] : _playerBase);
+                    case Lane.Top: return ((_topPlayerTowers.Count > 0) ? (iCombatable)_topPlayerTowers[0] : (iCombatable)_playerBase);
+                    case Lane.Mid: return ((_midPlayerTowers.Count > 0) ? (iCombatable)_midPlayerTowers[0] : (iCombatable)_playerBase);
+                    case Lane.Bot: return ((_botPlayerTowers.Count > 0) ? (iCombatable)_botPlayerTowers[0] : (iCombatable)_playerBase);
                 }
                 break;
             case "PlayerTeam":
                 switch (_pLane)
                 {
-                    case Lane.Top: return ((_topAITowers.Count > 0) ? _topAITowers[0] : _aiBase);
-                    case Lane.Mid: return ((_midAITowers.Count > 0) ? _midAITowers[0] : _aiBase);
-                    case Lane.Bot: return ((_botAITowers.Count > 0) ? _botAITowers[0] : _aiBase);
+                    case Lane.Top: return ((_topAITowers.Count > 0) ? (iCombatable)_topAITowers[0] : (iCombatable)_aiBase);
+                    case Lane.Mid: return ((_midAITowers.Count > 0) ? (iCombatable)_midAITowers[0] : (iCombatable)_aiBase);
+                    case Lane.Bot: return ((_botAITowers.Count > 0) ? (iCombatable)_botAITowers[0] : (iCombatable)_aiBase);
                 }
                 break;
         }
         return null;
     }
+
+    /// <summary>
+    /// The public storage of the lane information
+    /// </summary>
+    public Dictionary<string, Dictionary<Lane, List<Tower>>> lanes = new Dictionary<string, Dictionary<Lane, List<Tower>>>();
 
     #endregion
 
@@ -166,12 +171,13 @@ public class GameManager : MonoBehaviour
     [SerializeField] private List<Tower> _topPlayerTowers = new List<Tower>();
     [SerializeField] private List<Tower> _midPlayerTowers = new List<Tower>();
     [SerializeField] private List<Tower> _botPlayerTowers = new List<Tower>();
-    [SerializeField] private Tower _playerBase = null;
+    [SerializeField] private BaseTower _playerBase = null;
+    [SerializeField] private PlayerBot _player = null;
 
     [SerializeField] private List<Tower> _topAITowers = new List<Tower>();
     [SerializeField] private List<Tower> _midAITowers = new List<Tower>();
     [SerializeField] private List<Tower> _botAITowers = new List<Tower>();
-    [SerializeField] private Tower _aiBase = null;
+    [SerializeField] private BaseTower _aiBase = null;
 
     #endregion
 
@@ -179,6 +185,27 @@ public class GameManager : MonoBehaviour
 
     /// Used to perform configuration for the class
     private void Awake() => _SetSingleton();
+
+    /// <summary>
+    /// Sets up the lanes
+    /// </summary>
+    private void Start()
+    {
+        lanes.Add("PlayerTeam",
+            new Dictionary<Lane, List<Tower>>()
+            {
+                { Lane.Bot, _botPlayerTowers },
+                { Lane.Mid, _midPlayerTowers },
+                { Lane.Top, _topPlayerTowers }
+            });
+        lanes.Add("EnemyTeam",
+            new Dictionary<Lane, List<Tower>>()
+            {
+                { Lane.Bot, _botAITowers },
+                { Lane.Mid, _midAITowers },
+                { Lane.Top, _topAITowers }
+            });
+    }
 
     /// Sets the singleton for the class
     private void _SetSingleton()
@@ -193,6 +220,18 @@ public class GameManager : MonoBehaviour
         {
             DontDestroyOnLoad(gameObject);
         }
+    }
+
+    /// <summary>
+    /// Restarts the game
+    /// </summary>
+    private void _RestartGame()
+    {
+        state = GameState.Gameplay;
+        Minion.allMinions.ForEach(m => m.Die());
+        Tower.allTowers.ForEach(t => t.Restart());
+        BaseTower.allBases.ForEach(b => b.Restart());
+        _player.Spawn(_playerBase.transform, Lane.Mid);
     }
 
     #endregion

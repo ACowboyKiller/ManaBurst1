@@ -6,11 +6,17 @@ NavMeshProjectSettings:
   serializedVersion: 2
   areas:
   - name: Walkable
-    cost: 1
+    cost: 3
   - name: Not Walkable
     cost: 1
   - name: Jump
     cost: 2
+  - name: Top
+    cost: 3
+  - name: Mid
+    cost: 3
+  - name: Bot
+    cost: 3
   - name: 
     cost: 1
   - name: 
@@ -63,13 +69,7 @@ NavMeshProjectSettings:
     cost: 1
   - name: 
     cost: 1
-  - name: 
-    cost: 1
-  - name: 
-    cost: 1
-  - name: 
-    cost: 1
-  m_LastAgentTypeID: -887442657
+  m_LastAgentTypeID: 1479372276
   m_Settings:
   - serializedVersion: 2
     agentTypeID: 0

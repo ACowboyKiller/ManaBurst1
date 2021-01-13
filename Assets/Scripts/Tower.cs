@@ -22,6 +22,11 @@ public class Tower : MonoBehaviour, iCombatable
     #region --------------------    Public Properties
 
     /// <summary>
+    /// The tower registery
+    /// </summary>
+    public static List<Tower> allTowers = new List<Tower>();
+
+    /// <summary>
     /// Stores whether or not the tower is alive
     /// </summary>
     public bool isAlive { get; set; } = true;
@@ -56,14 +61,26 @@ public class Tower : MonoBehaviour, iCombatable
     /// </summary>
     public bool isReadyToAttack => _attackTimer == _attackCooldown;
 
-    /// <summary>
-    /// Returns whether or not the tower is ready to spawn minions
-    /// </summary>
-    public bool isReadyToSpawnMinions => _minionSpawnTimer == _minionSpawnCooldown;
-
     #endregion
 
     #region --------------------    Public Methods
+
+    /// <summary>
+    /// Restarts the tower for game reset
+    /// </summary>
+    public void Restart()
+    {
+        GameManager.instance.lanes[tag][lane].Remove(this);
+        GameManager.instance.lanes[tag][lane].Add(this);
+        health = _maxHealth;
+        gameObject.SetActive(true);
+    }
+
+    /// <summary>
+    /// Returns the combatant's game object
+    /// </summary>
+    /// <returns></returns>
+    public GameObject GetGameObject() => gameObject;
 
     /// <summary>
     /// Returns whether or not the combatant is alive
@@ -140,6 +157,7 @@ public class Tower : MonoBehaviour, iCombatable
     {
         if (!isAlive) return;
         //  TODO:   Play death animation
+        GameManager.instance.lanes[tag][lane].Remove(this);
         isAlive = false;
         target = null;
         attackers.ForEach(a => a.LoseTarget(gameObject));
@@ -153,12 +171,6 @@ public class Tower : MonoBehaviour, iCombatable
 
     [Header("Tower Configurations")]
     [SerializeField] private GameManager.Lane _lane = GameManager.Lane.Mid;
-    [SerializeField] private bool _isMinionSpawner = false;
-    [SerializeField] private GameObject _minionPrefab = null;
-    [SerializeField] private float _minionSpawnCooldown = 25f;
-    private float _minionSpawnTimer = 20f;
-    [SerializeField] private Transform _minionSpawner = null;
-    [SerializeField] private int _minionSpawnCount = 8;
 
     [Header("Combat Configurations")]
     [SerializeField] private float _maxHealth = 100f;
@@ -175,8 +187,12 @@ public class Tower : MonoBehaviour, iCombatable
 
     #region --------------------    Private Methods
 
+    /// <summary>
+    /// Registers the tower & sets the health
+    /// </summary>
     private void Awake()
     {
+        allTowers.Add(this);
         health = _maxHealth;
     }
 
@@ -199,28 +215,6 @@ public class Tower : MonoBehaviour, iCombatable
         /// Continue attacks if target is in range
         _attackTimer = (_t) ? Mathf.Min(_attackTimer + Time.deltaTime, _attackCooldown) : 0f;
         if (isReadyToAttack && _t) Attack(target);
-
-        /// Spawn Minions when ready
-        _minionSpawnTimer = Mathf.Min(_minionSpawnTimer + Time.deltaTime, _minionSpawnCooldown);
-        if (_isMinionSpawner && isReadyToSpawnMinions)
-        {
-            _minionSpawnTimer = -1f * _minionSpawnCount;
-            StartCoroutine(_SpawnMinions());
-        }
-    }
-
-    /// <summary>
-    /// Spawns minions
-    /// </summary>
-    private IEnumerator _SpawnMinions()
-    {
-        for (int i = 0; i < _minionSpawnCount; i ++)
-        {
-            yield return new WaitForSeconds(1f);
-            Minion _minion = _minionPrefab.PoolInstantiate().GetComponent<Minion>();
-            _minion.tag = tag;
-            _minion.Spawn(_minionSpawner, _lane);
-        }
     }
 
     #endregion

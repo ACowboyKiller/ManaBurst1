@@ -1,10 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
 using DG.Tweening;
 
-public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
+
+public class BaseTower : MonoBehaviour, iCombatable
 {
 
     #region --------------------    Public Enumerations
@@ -22,24 +22,19 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
     #region --------------------    Public Properties
 
     /// <summary>
-    /// The minion registry
+    /// The base registery
     /// </summary>
-    public static List<Minion> allMinions = new List<Minion>();
+    public static List<BaseTower> allBases = new List<BaseTower>();
 
     /// <summary>
-    /// Stores whether or not the minion is alive
+    /// Stores whether or not the tower is alive
     /// </summary>
     public bool isAlive { get; set; } = true;
 
     /// <summary>
-    /// Stores the current health of the minion
+    /// The health of the tower
     /// </summary>
     public float health { get; set; } = 0f;
-
-    /// <summary>
-    /// Stores the lane of the minion
-    /// </summary>
-    public GameManager.Lane lane { get; private set; } = GameManager.Lane.Mid;
 
     /// <summary>
     /// The attackers currently targetting the minion
@@ -47,14 +42,9 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
     public List<iCombatable> attackers { get; set; } = new List<iCombatable>();
 
     /// <summary>
-    /// Stores the current target gameobject
+    /// Stores the target for the tower
     /// </summary>
     public GameObject target { get; set; } = null;
-
-    /// <summary>
-    /// Returns whether or not the minion is correcting its orientation
-    /// </summary>
-    public bool isCorrecting => !_agent.enabled && _body.velocity.magnitude < 1f;
 
     /// <summary>
     /// Returns whether or not the minion has a target
@@ -62,41 +52,27 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
     public bool hasTarget => target != null && target.activeInHierarchy;
 
     /// <summary>
-    /// Returns whether or not the minion is ready to attack
+    /// Returns whether or not the tower is ready to fire
     /// </summary>
     public bool isReadyToAttack => _attackTimer == _attackCooldown;
+
+    /// <summary>
+    /// Returns whether or not the tower is ready to spawn minions
+    /// </summary>
+    public bool isReadyToSpawnMinions => _minionSpawnTimer == _minionSpawnCooldown;
 
     #endregion
 
     #region --------------------    Public Methods
 
     /// <summary>
-    /// Spawns the minion in the provided position
+    /// Restarts the tower for game reset
     /// </summary>
-    /// <param name="_pTransform"></param>
-    public void Spawn(Transform _pTransform, GameManager.Lane _pLane)
+    public void Restart()
     {
-        transform.position = _pTransform.position;
-        transform.rotation = _pTransform.rotation;
-        lane = _pLane;
+        _minionSpawnTimer = 0f;
         health = _maxHealth;
-        isAlive = true;
         gameObject.SetActive(true);
-        //  TODO:   Play some animation
-        _agent.enabled = true;
-        _body.isKinematic = true;
-        Direct(GameManager.instance.NextTower(tag, lane).GetGameObject().transform.position);
-    }
-
-    /// <summary>
-    /// Directs the minion to travel to the provided position
-    /// </summary>
-    /// <param name="_pPosition"></param>
-    public void Direct(Vector3 _pPosition)
-    {
-        _agent.SetAreaCost((int)lane + 3, 1);
-        if (!isAlive) return;
-        _agent?.SetDestination(_pPosition);
     }
 
     /// <summary>
@@ -154,9 +130,8 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
     {
         if (!isAlive) return;
         _attackTimer = 0f;
-        //  TODO:   Play some animation
         Missile _missile = _missilePrefab.PoolInstantiate().GetComponent<Missile>();
-        _missileLauncher.LookAt(target.transform.position + (Vector3.up * 0.05f), Vector3.up);
+        _missileLauncher.LookAt(target.transform.position + (Vector3.up * 0.1f));
         _missile.Fire(_damage, tag, _missileLauncher.position, _missileLauncher.rotation);
     }
 
@@ -167,10 +142,6 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
     public void Damage(float _pAmount, Vector3 _pPosition)
     {
         if (!isAlive) return;
-        _correctingTime = 0f;
-        _body.isKinematic = false;
-        _agent.enabled = false;
-        _body.AddExplosionForce(150f, _pPosition - (Vector3.up * 0.5f), 2f);
         health = Mathf.Max(health - _pAmount, 0f);
         if (health == 0f)
         {
@@ -187,66 +158,97 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
         //  TODO:   Play death animation
         isAlive = false;
         target = null;
-        attackers.ForEach(a => a?.LoseTarget(gameObject));
+        attackers.ForEach(a => a.LoseTarget(gameObject));
         attackers.Clear();
         gameObject.SetActive(false);
+        //  TODO:   Lose game
     }
 
     #endregion
 
     #region --------------------    Private Fields
 
-    [Header("Minion Configurations")]
-    [SerializeField] private NavMeshAgent _agent = null;
-    [SerializeField] private Rigidbody _body = null;
-    private float _correctingTime = 0f;
+    [Header("Base Configurations")]
+    [SerializeField] private GameObject _minionPrefab = null;
+    [SerializeField] private GameObject _heavyMinionPrefab = null;
+    [SerializeField] private float _minionSpawnCooldown = 25f;
+    private float _minionSpawnTimer = 0f;
+    [SerializeField] private Transform _topMinionSpawner = null;
+    [SerializeField] private Transform _midMinionSpawner = null;
+    [SerializeField] private Transform _botMinionSpawner = null;
+    [SerializeField] private Transform _playerSpawner = null;
+    [SerializeField] private int _minionSpawnCount = 8;
 
     [Header("Combat Configurations")]
-    [SerializeField] private float _maxHealth = 3f;
-    [SerializeField] private float _damage = 1f;
-    [SerializeField] private float _attackCooldown = 1.5f;
+    [SerializeField] private float _maxHealth = 100f;
+    [SerializeField] private float _attackCooldown = 2f;
     private float _attackTimer = 0f;
+    [SerializeField] private float _damage = 10f;
     [SerializeField] private GameObject _missilePrefab = null;
     [SerializeField] private Transform _missileLauncher = null;
+
+    [Header("UI Configurations")]
+    [SerializeField] private CustomProgressBar _healthBar = null;
 
     #endregion
 
     #region --------------------    Private Methods
 
     /// <summary>
-    /// Registers the minion
+    /// Registers the base and sets the health
     /// </summary>
-    private void Awake() => allMinions.Add(this);
+    private void Awake()
+    {
+        allBases.Add(this);
+        health = _maxHealth;
+    }
 
     /// <summary>
-    /// Either follows the target & attacks if in range & cooldown is done or begins walking towards the next tower
+    /// Spawns minions and fires at enemy minions when they are close
     /// </summary>
     private void Update()
     {
         if (!isAlive) return;
 
-        /// Reenable the agent when the velocity dies down
-        if (isCorrecting)
-        {
-            _correctingTime += Time.deltaTime;
-            transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.identity, 2f * Time.deltaTime);
-            if (_correctingTime >= 0.5f)
-            {
-                _body.isKinematic = true;
-                _agent.enabled = true;
-            }
-        }
+        /// Update UI
+        _healthBar.percent = health / _maxHealth;
 
         /// Performs target check
         bool _t = hasTarget;
 
         /// Move towards target otherwise move towards next tower
-        target = (_t)? target : null;
-        if (_agent.enabled) _agent.SetDestination((_t) ? target.transform.position : GameManager.instance.NextTower(tag, lane).GetGameObject().transform.position);
+        target = (_t) ? target : null;
 
         /// Continue attacks if target is in range
         _attackTimer = (_t) ? Mathf.Min(_attackTimer + Time.deltaTime, _attackCooldown) : 0f;
         if (isReadyToAttack && _t) Attack(target);
+
+        /// Spawn Minions when ready
+        _minionSpawnTimer = Mathf.Min(_minionSpawnTimer + Time.deltaTime, _minionSpawnCooldown);
+        if (isReadyToSpawnMinions)
+        {
+            _minionSpawnTimer = -1f * _minionSpawnCount;
+            StartCoroutine(_SpawnMinions());
+        }
+    }
+
+    /// <summary>
+    /// Spawns minions
+    /// </summary>
+    private IEnumerator _SpawnMinions()
+    {
+        for (int i = 0; i < _minionSpawnCount; i ++)
+        {
+            yield return new WaitForSeconds(1f);
+            for (int x = 0; x < 3; x ++)
+            {
+                string _enemyString = tag == "PlayerTeam" ? "EnemyTeam" : "PlayerTeam";
+                Minion _minion = (GameManager.instance.lanes[_enemyString][(GameManager.Lane)x].Count == 2 || i < _minionSpawnCount / 2) ? _minionPrefab.PoolInstantiate().GetComponent<Minion>() :
+                    _heavyMinionPrefab.PoolInstantiate().GetComponent<Minion>();
+                _minion.tag = tag;
+                _minion.Spawn((x==0)? _topMinionSpawner : ((x==1)? _midMinionSpawner : _botMinionSpawner), (GameManager.Lane)x);
+            }
+        }
     }
 
     #endregion

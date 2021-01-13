@@ -7,6 +7,8 @@ public interface iCombatable
 
     #region --------------------    Public Methods
 
+    GameObject GetGameObject();
+
     bool IsAlive();
 
     bool IsEnemy(GameObject _pTarget);

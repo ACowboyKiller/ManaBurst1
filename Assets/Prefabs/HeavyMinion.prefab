@@ -180,7 +180,7 @@ GameObject:
   - component: {fileID: 8644946388132854053}
   - component: {fileID: 8644946388132854041}
   m_Layer: 0
-  m_Name: GreatMinion
+  m_Name: HeavyMinion
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -239,7 +239,7 @@ NavMeshAgent:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8644946388132854050}
-  m_Enabled: 1
+  m_Enabled: 0
   m_AgentTypeID: 0
   m_Radius: 0.2
   m_Speed: 0.5
