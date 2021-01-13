@@ -1,0 +1,23 @@
+fileFormatVersion: 2
+guid: 1a12a9b6f00288e44b045f8eaf7ba81c
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: a Atmospheric
+  fontNames:
+  - a Atmospheric
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 5427fe5e4efa4ec4e8528a1ff23758c1, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
