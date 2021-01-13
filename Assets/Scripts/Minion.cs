@@ -66,6 +66,11 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
     /// </summary>
     public bool isReadyToAttack => _attackTimer == _attackCooldown;
 
+    /// <summary>
+    /// Returns whether or not the minion can be damagaed
+    /// </summary>
+    public bool canBeDamaged => _damageCooldown == 0f;
+
     #endregion
 
     #region --------------------    Public Methods
@@ -79,9 +84,10 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
         transform.position = _pTransform.position;
         transform.rotation = _pTransform.rotation;
         lane = _pLane;
-        health = _maxHealth;
+        health = _maxHealth - ((tag == "PlayerTeam")? 1f : 0f);
         isAlive = true;
         gameObject.SetActive(true);
+        _renderer.sharedMaterial = (tag == "PlayerTeam") ? _friendly : _enemy;
         //  TODO:   Play some animation
         _agent.enabled = true;
         _body.isKinematic = true;
@@ -166,15 +172,19 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
     /// <param name="_pAmount"></param>
     public void Damage(float _pAmount, Vector3 _pPosition)
     {
-        if (!isAlive) return;
+        if (!isAlive || !canBeDamaged) return;
         _correctingTime = 0f;
+        _damageCooldown = 0.1f;
         _body.isKinematic = false;
         _agent.enabled = false;
-        _body.AddExplosionForce(150f, _pPosition - (Vector3.up * 0.5f), 2f);
         health = Mathf.Max(health - _pAmount, 0f);
         if (health == 0f)
         {
             Die();
+        }
+        else
+        {
+            _body.AddExplosionForce(300f, _pPosition - (Vector3.up * 0.5f), 3f);
         }
     }
 
@@ -200,10 +210,14 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
     [SerializeField] private NavMeshAgent _agent = null;
     [SerializeField] private Rigidbody _body = null;
     private float _correctingTime = 0f;
+    [SerializeField] private MeshRenderer _renderer = null;
+    [SerializeField] private Material _friendly = null;
+    [SerializeField] private Material _enemy = null;
 
     [Header("Combat Configurations")]
     [SerializeField] private float _maxHealth = 3f;
     [SerializeField] private float _damage = 1f;
+    private float _damageCooldown = 0f;
     [SerializeField] private float _attackCooldown = 1.5f;
     private float _attackTimer = 0f;
     [SerializeField] private GameObject _missilePrefab = null;
@@ -223,6 +237,7 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
     /// </summary>
     private void Update()
     {
+        if (GameManager.state != GameManager.GameState.Gameplay) return;
         if (!isAlive) return;
 
         /// Reenable the agent when the velocity dies down
@@ -236,6 +251,9 @@ public class Minion : MonoBehaviour, iSpawnable, iDirectable, iCombatable
                 _agent.enabled = true;
             }
         }
+
+        /// Reduce damage cooldown
+        _damageCooldown = Mathf.Max(_damageCooldown - Time.deltaTime, 0f);
 
         /// Performs target check
         bool _t = hasTarget;

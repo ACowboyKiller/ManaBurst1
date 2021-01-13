@@ -37,7 +37,11 @@ public class FaceCamera : MonoBehaviour
 
     #region --------------------    Private Methods
 
-    private void LateUpdate() => transform.LookAt(_camera, Vector3.up);
+    private void LateUpdate()
+    {
+        if (GameManager.state != GameManager.GameState.Gameplay) return;
+        transform.LookAt(_camera, Vector3.up);
+    }
 
     #endregion
 

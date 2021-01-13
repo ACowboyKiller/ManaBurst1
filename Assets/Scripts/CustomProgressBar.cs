@@ -26,6 +26,7 @@ public class CustomProgressBar : MonoBehaviour
 
 	private void Update()
 	{
+		if (GameManager.state != GameManager.GameState.Gameplay) return;
 		if (_fillImage == null) return;
 		_fillImage.enabled = _image.enabled;
 		_fillImage.rectTransform.SetParent(_image.rectTransform);

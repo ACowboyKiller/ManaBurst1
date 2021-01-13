@@ -31,6 +31,7 @@ public class Missile : MonoBehaviour
         transform.position = _pPosition;
         transform.rotation = _pDirection;
         gameObject.SetActive(true);
+        _renderer.sharedMaterial = tag == "PlayerTeam" ? _friendly : _enemy;
     }
 
     #endregion
@@ -46,6 +47,8 @@ public class Missile : MonoBehaviour
     private float _life = 2f;
     private MeshRenderer _renderer = null;
     [SerializeField] private Collider _explosionTrigger = null;
+    [SerializeField] private Material _friendly = null;
+    [SerializeField] private Material _enemy = null;
 
     #endregion
 
@@ -73,6 +76,7 @@ public class Missile : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        if (GameManager.state != GameManager.GameState.Gameplay) return;
         if (_life <= 0) return;
         transform.position += transform.forward * Time.deltaTime * _speed;
         _life -= Time.deltaTime;
@@ -89,6 +93,7 @@ public class Missile : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (other.tag == "Untagged" || other.CompareTag(tag)) return;
+        if (_life <= 0f) return;
         _Explode();
     }
 
@@ -97,6 +102,7 @@ public class Missile : MonoBehaviour
     /// </summary>
     private void _Explode()
     {
+        _life = 0f;
         _renderer.enabled = false;
         _explosionTrigger.enabled = true;
         //GameManager.instance.sfx.PlayOneShot(_explosionSound);

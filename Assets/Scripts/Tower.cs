@@ -73,6 +73,7 @@ public class Tower : MonoBehaviour, iCombatable
         GameManager.instance.lanes[tag][lane].Remove(this);
         GameManager.instance.lanes[tag][lane].Add(this);
         health = _maxHealth;
+        isAlive = true;
         gameObject.SetActive(true);
     }
 
@@ -163,6 +164,7 @@ public class Tower : MonoBehaviour, iCombatable
         attackers.ForEach(a => a.LoseTarget(gameObject));
         attackers.Clear();
         gameObject.SetActive(false);
+        GameManager.instance.gameTimeRemaining += (tag == "PlayerTeam")? -30f : 60f;
     }
 
     #endregion
@@ -201,6 +203,8 @@ public class Tower : MonoBehaviour, iCombatable
     /// </summary>
     private void Update()
     {
+        if (GameManager.state != GameManager.GameState.Gameplay) return;
+
         if (!isAlive) return;
 
         /// Update UI

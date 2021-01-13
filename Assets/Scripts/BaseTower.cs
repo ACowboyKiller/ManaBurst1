@@ -61,6 +61,11 @@ public class BaseTower : MonoBehaviour, iCombatable
     /// </summary>
     public bool isReadyToSpawnMinions => _minionSpawnTimer == _minionSpawnCooldown;
 
+    /// <summary>
+    /// Returns the player spawner transform
+    /// </summary>
+    public Transform playerSpawner => _playerSpawner;
+
     #endregion
 
     #region --------------------    Public Methods
@@ -70,8 +75,10 @@ public class BaseTower : MonoBehaviour, iCombatable
     /// </summary>
     public void Restart()
     {
+        if (_spawner != null) StopCoroutine(_spawner);
         _minionSpawnTimer = 0f;
         health = _maxHealth;
+        isAlive = true;
         gameObject.SetActive(true);
     }
 
@@ -161,7 +168,14 @@ public class BaseTower : MonoBehaviour, iCombatable
         attackers.ForEach(a => a.LoseTarget(gameObject));
         attackers.Clear();
         gameObject.SetActive(false);
-        //  TODO:   Lose game
+        if (tag == "PlayerTeam")
+        {
+            GameManager.instance.GoToResultsLose();
+        }
+        else
+        {
+            GameManager.instance.GoToResultsWin();
+        }
     }
 
     #endregion
@@ -178,6 +192,7 @@ public class BaseTower : MonoBehaviour, iCombatable
     [SerializeField] private Transform _botMinionSpawner = null;
     [SerializeField] private Transform _playerSpawner = null;
     [SerializeField] private int _minionSpawnCount = 8;
+    private Coroutine _spawner = null;
 
     [Header("Combat Configurations")]
     [SerializeField] private float _maxHealth = 100f;
@@ -208,6 +223,7 @@ public class BaseTower : MonoBehaviour, iCombatable
     /// </summary>
     private void Update()
     {
+        if (GameManager.state != GameManager.GameState.Gameplay) return;
         if (!isAlive) return;
 
         /// Update UI
@@ -227,8 +243,8 @@ public class BaseTower : MonoBehaviour, iCombatable
         _minionSpawnTimer = Mathf.Min(_minionSpawnTimer + Time.deltaTime, _minionSpawnCooldown);
         if (isReadyToSpawnMinions)
         {
-            _minionSpawnTimer = -1f * _minionSpawnCount;
-            StartCoroutine(_SpawnMinions());
+            _minionSpawnTimer = -1.5f * _minionSpawnCount;
+            _spawner = StartCoroutine(_SpawnMinions());
         }
     }
 
@@ -239,7 +255,7 @@ public class BaseTower : MonoBehaviour, iCombatable
     {
         for (int i = 0; i < _minionSpawnCount; i ++)
         {
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(1.5f);
             for (int x = 0; x < 3; x ++)
             {
                 string _enemyString = tag == "PlayerTeam" ? "EnemyTeam" : "PlayerTeam";
